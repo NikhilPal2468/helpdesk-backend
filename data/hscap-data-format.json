@@ -1,0 +1,30 @@
+{
+  "schools": [
+    { "code": "SCH001", "name": "Government HSS, Trivandrum", "nameMl": "സർക്കാർ എച്ച്.എസ്.എസ്., തിരുവനന്തപുരം" },
+    { "code": "SCH002", "name": "St. Mary's HSS, Kochi", "nameMl": "സെന്റ് മേരീസ് എച്ച്.എസ്.എസ്., കൊച്ചി" }
+  ],
+  "combinations": [
+    { "code": "COM001", "name": "Science (PCM)", "nameMl": "സയൻസ് (PCM)" },
+    { "code": "COM002", "name": "Science (PCB)", "nameMl": "സയൻസ് (PCB)" },
+    { "code": "COM003", "name": "Commerce", "nameMl": "കൊമേഴ്സ്" },
+    { "code": "COM004", "name": "Humanities", "nameMl": "ഹ്യൂമാനിറ്റീസ്" }
+  ],
+  "categories": [
+    { "code": "GEN", "name": "General", "nameMl": "സാധാരണ" },
+    { "code": "SC", "name": "Scheduled Caste", "nameMl": "പട്ടികജാതി" },
+    { "code": "ST", "name": "Scheduled Tribe", "nameMl": "പട്ടികവർഗം" },
+    { "code": "OBC", "name": "Other Backward Class", "nameMl": "മറ്റ് പിന്നോക്ക വിഭാഗം" },
+    { "code": "EWS", "name": "Economically Weaker Section", "nameMl": "സാമ്പത്തികമായി ദുർബലമായ വിഭാഗം" }
+  ],
+  "districts": [
+    { "code": "TVM", "name": "Thiruvananthapuram", "nameMl": "തിരുവനന്തപുരം" },
+    { "code": "KLM", "name": "Kollam", "nameMl": "കൊല്ലം" },
+    { "code": "EKM", "name": "Ernakulam", "nameMl": "എറണാകുളം" }
+  ],
+  "taluks": [
+    { "code": "TVM-01", "name": "Thiruvananthapuram", "nameMl": "തിരുവനന്തപുരം", "districtCode": "TVM" }
+  ],
+  "panchayats": [
+    { "code": "TVM-01-001", "name": "Sample Panchayat", "nameMl": "സാമ്പിൾ പഞ്ചായത്ത്", "talukCode": "TVM-01" }
+  ]
+}

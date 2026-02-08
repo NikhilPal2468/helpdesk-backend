@@ -1,0 +1,314 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  phone         String       @unique
+  name          String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  application   Application?
+  notifications Notification[]
+}
+
+model Application {
+  id                String              @id @default(cuid())
+  userId            String              @unique
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            ApplicationStatus   @default(PENDING)
+  currentStep       Int                 @default(1)
+  stepData          ApplicationStepData?
+  preferences       Preference[]
+  documents         Document[]
+  generatedPdf      GeneratedPDF?
+  payment           Payment?
+  adminActions      AdminAction[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  submittedAt       DateTime?
+  verifiedAt        DateTime?
+  verifiedBy        String?
+}
+
+enum ApplicationStatus {
+  DRAFT
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model ApplicationStepData {
+  id                    String   @id @default(cuid())
+  applicationId         String   @unique
+  application           Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  // Step 1: Qualifying Examination
+  examCode              String?
+  examName              String?
+  examNameOther         String?
+  registerNumber        String?
+  passingMonth          Int?
+  passingYear           Int?
+  schoolCode            String?
+  schoolName            String?
+  passedBoardExam       Boolean?
+  
+  // Step 2: Applicant Details
+  applicantName         String?
+  aadhaarNumber         String?
+  gender                String?
+  category              String?
+  categoryCode          String?
+  ewsEligible           Boolean?
+  caste                 String?
+  religion              String?
+  dateOfBirth           DateTime?
+  motherName            String?
+  fatherName            String?
+  guardianName          String?
+  
+  // Step 3: Reservation & Special Categories
+  oec                   Boolean?
+  linguisticMinority    Boolean?
+  linguisticLanguage    String?
+  differentlyAbled      Boolean?
+  differentlyAbledPercentage Float?
+  
+  // Step 4: Residence & Address
+  nativeState           String?
+  nativeStateCode        String?
+  nativeDistrict        String?
+  nativeDistrictCode    String?
+  nativeTaluk           String?
+  nativeTalukCode       String?
+  nativePanchayat       String?
+  nativePanchayatCode   String?
+  permanentAddress      String?
+  communicationAddress  String?
+  phone                 String?
+  email                 String?
+  
+  // Step 5: Grace / Bonus Marks
+  graceMarks            Boolean?
+  ncc                   Boolean?
+  scouts                 Boolean?
+  spc                   Boolean?
+  defenceDependent      Boolean?
+  littleKitesGrade      String?
+  
+  // Step 6: Sports Participation
+  sportsStateCount      Int?
+  sportsDistrictFirst   Int?
+  sportsDistrictSecond  Int?
+  sportsDistrictThird   Int?
+  sportsDistrictParticipation Int?
+  
+  // Step 7: Kalolsavam
+  kalolsavamStateCount  Int?
+  kalolsavamDistrictA   Int?
+  kalolsavamDistrictB   Int?
+  kalolsavamDistrictC   Int?
+  kalolsavamDistrictParticipation Int?
+  
+  // Step 8: Scholarships
+  ntse                  Boolean?
+  nmms                  Boolean?
+  uss                   Boolean?
+  lss                   Boolean?
+  
+  // Step 9: Co-curricular
+  scienceFairGrade      String?
+  mathsFairGrade        String?
+  itFairGrade           String?
+  workExperienceGrade   String?
+  clubs                 String? // JSON array
+  
+  // Step 10: SSLC Attempts & Marks
+  sslcAttempts          Int?
+  previousAttempts      String? // JSON array
+  subjectGrades         String? // JSON array
+  
+  // Step 11: Preferences (stored in separate table)
+  
+  // Step 12: Documents (stored in separate table)
+  
+  // Step 13: Signatures
+  applicantSignature    String? // File path
+  parentSignature       String? // File path
+  disclaimerAccepted    Boolean?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Preference {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  preferenceNumber Int
+  schoolCode    String
+  combinationCode String
+  createdAt     DateTime    @default(now())
+  
+  @@unique([applicationId, preferenceNumber])
+  @@index([applicationId])
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          DocumentType
+  filePath      String
+  fileName      String
+  fileSize      Int
+  mimeType      String
+  uploadedAt    DateTime    @default(now())
+  
+  @@index([applicationId])
+}
+
+enum DocumentType {
+  AADHAAR
+  SSLC_MARKSHEET
+  CATEGORY_CERTIFICATE
+  RESERVATION_CERTIFICATE
+  SPORTS_CERTIFICATE
+  KALOLSAVAM_CERTIFICATE
+  SCHOLARSHIP_CERTIFICATE
+  DISABILITY_CERTIFICATE
+  OTHER
+}
+
+model GeneratedPDF {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  filePath      String
+  fileName      String
+  fileSize      Int
+  generatedAt   DateTime    @default(now())
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  orderId       String
+  paymentId     String?
+  signature     String?
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model AdminAction {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  adminId       String
+  action        AdminActionType
+  notes         String?
+  createdAt     DateTime        @default(now())
+  
+  @@index([applicationId])
+}
+
+enum AdminActionType {
+  VERIFIED
+  REJECTED
+  NOTES_ADDED
+}
+
+model Admin {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model ExploreContent {
+  id            String              @id @default(cuid())
+  type          ExploreContentType
+  titleEn       String
+  titleMl       String?
+  contentEn     String
+  contentMl     String?
+  videoUrl      String?
+  thumbnailUrl  String?
+  category      String?
+  published     Boolean             @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  @@index([published, type])
+}
+
+enum ExploreContentType {
+  BLOG
+  VIDEO
+}
+
+model Notification {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  message       String
+  type          NotificationType
+  read          Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  
+  @@index([userId, read])
+}
+
+enum NotificationType {
+  APPLICATION_SUBMITTED
+  APPLICATION_VERIFIED
+  APPLICATION_REJECTED
+  GENERAL
+}
+
+model SeedData {
+  id            String      @id @default(cuid())
+  type          SeedDataType
+  code          String
+  name          String
+  nameMl        String?
+  metadata      String?     // JSON for additional data
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([type, code], name: "type_code_unique")
+  @@index([type])
+}
+
+enum SeedDataType {
+  SCHOOL
+  COMBINATION
+  CATEGORY
+  DISTRICT
+  TALUK
+  PANCHAYAT
+}

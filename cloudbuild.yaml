@@ -1,0 +1,44 @@
+# Cloud Build config for continuous deploy from GitHub to Cloud Run.
+# Use this file when your GitHub repo contains only this backend (repo root = this folder).
+# Trigger: build context = . (repo root), Dockerfile = ./Dockerfile
+
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: school-admission-backend
+
+steps:
+  # Build the Docker image (context = repo root = this backend folder)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:latest'
+      - '.'
+    id: 'build'
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
+    id: 'push'
+    waitFor: ['build']
+
+  # Deploy to Cloud Run (env vars and secrets set on the service in console or gcloud)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+    id: 'deploy'
+    waitFor: ['push']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
