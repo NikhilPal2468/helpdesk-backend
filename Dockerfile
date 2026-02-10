@@ -29,5 +29,5 @@ COPY --from=builder /app/prisma ./prisma
 # Cloud Run expects PORT; default 8080
 EXPOSE 8080
 
-# Run migrations then start (optional: run migrate in CI instead)
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Run migrations then start (ensure DATABASE_URL and Cloud SQL are set on the Cloud Run service)
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/server.js"]

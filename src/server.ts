@@ -73,9 +73,10 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
 });
 
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0'; // required for Cloud Run to reach the container
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
+app.listen(Number(PORT), HOST, () => {
+  logger.info(`Server running on ${HOST}:${PORT}`);
 });
 
 // Graceful shutdown
