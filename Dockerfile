@@ -1,5 +1,5 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Build stage (Debian-based so Prisma gets glibc + OpenSSL compatible with Cloud Run)
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -13,8 +13,8 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine AS runner
+# Production stage (same base so Prisma engine and libssl match)
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
