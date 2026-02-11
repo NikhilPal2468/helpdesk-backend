@@ -24,6 +24,9 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
+// Trust proxy (required for Cloud Run / load balancers so rate-limit sees real client IP)
+app.set('trust proxy', 1);
+
 // Security: helmet (headers)
 app.use(helmet({ contentSecurityPolicy: false })); // CSP disabled for API; enable if serving HTML
 
