@@ -1,5 +1,5 @@
-# Build stage (Debian-based so Prisma gets glibc + OpenSSL compatible with Cloud Run)
-FROM node:20-slim AS builder
+# Build stage (Debian 11 Bullseye has libssl.so.1.1 for Prisma's engine)
+FROM node:20-bullseye-slim AS builder
 
 WORKDIR /app
 
@@ -13,8 +13,8 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Production stage (same base so Prisma engine and libssl match)
-FROM node:20-slim AS runner
+# Production stage (same base: Bullseye has libssl1.1)
+FROM node:20-bullseye-slim AS runner
 
 WORKDIR /app
 
