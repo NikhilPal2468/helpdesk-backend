@@ -11,14 +11,15 @@ const STEP_DATA_KEYS = new Set([
   'schoolCode', 'schoolName', 'passedBoardExam',
   'applicantName', 'aadhaarNumber', 'gender', 'category', 'categoryCode', 'ewsEligible',
   'caste', 'religion', 'dateOfBirth', 'motherName', 'fatherName', 'guardianName',
-  'oec', 'linguisticMinority', 'linguisticLanguage', 'differentlyAbled', 'differentlyAbledPercentage',
+  'oec', 'linguisticMinority', 'linguisticLanguage', 'differentlyAbled', 'differentlyAbledPercentage', 'differentlyAbledTypes',
   'nativeState', 'nativeStateCode', 'nativeDistrict', 'nativeDistrictCode', 'nativeTaluk', 'nativeTalukCode',
-  'nativePanchayat', 'nativePanchayatCode', 'permanentAddress', 'communicationAddress', 'phone', 'email',
+  'nativePanchayat', 'nativePanchayatCode', 'nativeCountry', 'permanentAddress', 'permanentPinCode', 'communicationAddress', 'communicationPinCode', 'phone', 'email',
   'graceMarks', 'ncc', 'scouts', 'spc', 'defenceDependent', 'littleKitesGrade',
   'sportsStateCount', 'sportsDistrictFirst', 'sportsDistrictSecond', 'sportsDistrictThird', 'sportsDistrictParticipation',
   'kalolsavamStateCount', 'kalolsavamDistrictA', 'kalolsavamDistrictB', 'kalolsavamDistrictC', 'kalolsavamDistrictParticipation',
   'ntse', 'nmms', 'uss', 'lss',
-  'scienceFairGrade', 'mathsFairGrade', 'itFairGrade', 'workExperienceGrade', 'clubs',
+  'scienceFairGrade', 'scienceFairCounts', 'mathsFairGrade', 'mathsFairCounts', 'itFairGrade', 'itFairCounts',
+  'workExperienceGrade', 'workExperienceCounts', 'socialScienceFairCounts', 'clubs',
   'sslcAttempts', 'previousAttempts', 'subjectGrades',
   'applicantSignature', 'parentSignature', 'disclaimerAccepted',
 ]);
@@ -57,6 +58,13 @@ function normalizeStepData(body: any): Record<string, unknown> {
     } else if (key === 'clubs' && Array.isArray(value)) {
       value = JSON.stringify(value);
     } else if (key === 'previousAttempts' && Array.isArray(value)) {
+      value = JSON.stringify(value);
+    } else if (key === 'differentlyAbledTypes' && Array.isArray(value)) {
+      // Multi-select: store as JSON; also keep legacy boolean in sync.
+      const arr = value as unknown[];
+      out.differentlyAbled = arr.length > 0;
+      value = JSON.stringify(arr);
+    } else if (key.endsWith('Counts') && typeof value === 'object' && value !== null && !(value instanceof Date)) {
       value = JSON.stringify(value);
     } else if (key === 'subjectGrades' && typeof value === 'object' && value !== null && !(value instanceof Date)) {
       value = JSON.stringify(value);
@@ -106,6 +114,35 @@ function hydrateStepData(stepData: any): any {
     } catch {
       // leave as-is
     }
+  }
+
+  // Parse JSON-backed fields for new UI
+  if (typeof out.differentlyAbledTypes === 'string') {
+    try {
+      out.differentlyAbledTypes = JSON.parse(out.differentlyAbledTypes);
+    } catch {
+      out.differentlyAbledTypes = [];
+    }
+  }
+  for (const k of [
+    'scienceFairCounts',
+    'mathsFairCounts',
+    'itFairCounts',
+    'workExperienceCounts',
+    'socialScienceFairCounts',
+  ]) {
+    if (typeof out[k] === 'string') {
+      try {
+        out[k] = JSON.parse(out[k]);
+      } catch {
+        out[k] = null;
+      }
+    }
+  }
+
+  // Backward-compatible subject mapping: old key had a space in it.
+  if (out['subjectGrade_SS'] == null && out['subjectGrade_Social Science'] != null) {
+    out['subjectGrade_SS'] = out['subjectGrade_Social Science'];
   }
   return out;
 }

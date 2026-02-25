@@ -6,7 +6,7 @@ import * as storage from '../services/storage';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Get all applications
+// Get all applications (school admission)
 router.get('/applications', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
@@ -50,7 +50,7 @@ router.get('/applications', authenticateAdmin, async (req: AuthRequest, res) => 
   }
 });
 
-// Get single application
+// Get single application (school admission)
 router.get('/applications/:id', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const application = await prisma.application.findUnique({
@@ -81,7 +81,7 @@ router.get('/applications/:id', authenticateAdmin, async (req: AuthRequest, res)
   }
 });
 
-// Verify application
+// Verify application (school admission)
 router.post('/applications/:id/verify', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { notes } = req.body;
@@ -128,7 +128,7 @@ router.post('/applications/:id/verify', authenticateAdmin, async (req: AuthReque
   }
 });
 
-// Reject application
+// Reject application (school admission)
 router.post('/applications/:id/reject', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { notes } = req.body;
@@ -177,12 +177,105 @@ router.post('/applications/:id/reject', authenticateAdmin, async (req: AuthReque
   }
 });
 
-// Get PDF
+// Get PDF (school admission)
 router.get('/applications/:id/pdf', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const application = await prisma.application.findUnique({
       where: { id: req.params.id },
       include: { generatedPdf: true }
+    });
+
+    if (!application || !application.generatedPdf) {
+      return res.status(404).json({ error: 'PDF not found' });
+    }
+
+    const key = application.generatedPdf.filePath;
+    const exists = storage.useGcs() ? await storage.exists(key) : storage.existsSync(key);
+    if (!exists) {
+      return res.status(404).json({ error: 'PDF file not found' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${application.generatedPdf.fileName}"`);
+    const stream = storage.getReadStream(key);
+    stream.pipe(res);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PAN CARD APPLICATIONS
+
+// List PAN applications
+router.get('/pan-applications', authenticateAdmin, async (req: AuthRequest, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+
+    const where: any = {};
+    if (status) {
+      where.status = status;
+    }
+
+    const applications = await prisma.panApplication.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, phone: true, name: true },
+        },
+        documents: true,
+        generatedPdf: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit),
+    });
+
+    const total = await prisma.panApplication.count({ where });
+
+    res.json({
+      applications,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single PAN application
+router.get('/pan-applications/:id', authenticateAdmin, async (req: AuthRequest, res) => {
+  try {
+    const application = await prisma.panApplication.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: {
+          select: { id: true, phone: true, name: true },
+        },
+        documents: true,
+        generatedPdf: true,
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: 'PAN application not found' });
+    }
+
+    res.json({ application });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get PAN PDF
+router.get('/pan-applications/:id/pdf', authenticateAdmin, async (req: AuthRequest, res) => {
+  try {
+    const application = await prisma.panApplication.findUnique({
+      where: { id: req.params.id },
+      include: { generatedPdf: true },
     });
 
     if (!application || !application.generatedPdf) {

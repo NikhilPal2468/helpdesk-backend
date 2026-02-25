@@ -13,11 +13,13 @@ import applicationRoutes from './routes/application';
 import documentRoutes from './routes/documents';
 import pdfRoutes from './routes/pdf';
 import aiRoutes from './routes/ai';
+import panAiRoutes from './routes/pan-ai';
 import adminRoutes from './routes/admin';
 import adminContentRoutes from './routes/admin-content';
 import exploreRoutes from './routes/explore';
 import seedRoutes from './routes/seed';
 import paymentRoutes from './routes/payment';
+import panRoutes from './routes/pan';
 
 dotenv.config();
 
@@ -40,11 +42,14 @@ app.use(apiLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging (method, path, status, duration)
+// Request logging (method, path, status, duration) — stdout so Cloud Run / GCP Logs show every request
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
-    logRequest(req.method, req.path, res.statusCode, Date.now() - start);
+    const durationMs = Date.now() - start;
+    logRequest(req.method, req.path, res.statusCode, durationMs);
+    // Also log a single line to stdout so it always appears in Google Cloud Logging
+    console.log(`[API] ${req.method} ${req.path} ${res.statusCode} ${durationMs}ms`);
   });
   next();
 });
@@ -60,11 +65,13 @@ app.use('/api/application', applicationRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/pan-ai', panAiRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminContentRoutes);
 app.use('/api/explore', exploreRoutes);
 app.use('/api/seed', seedRoutes);
 app.use('/api/payment', paymentLimiter, paymentRoutes);
+app.use('/api/pan', panRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {

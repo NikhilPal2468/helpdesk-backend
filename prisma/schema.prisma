@@ -12,13 +12,14 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  phone         String       @unique
-  name          String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  application   Application?
-  notifications Notification[]
+  id              String          @id @default(cuid())
+  phone           String          @unique
+  name            String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  application     Application?
+  panApplication  PanApplication?
+  notifications   Notification[]
 }
 
 model Application {
@@ -83,10 +84,12 @@ model ApplicationStepData {
   linguisticLanguage    String?
   differentlyAbled      Boolean?
   differentlyAbledPercentage Float?
+  differentlyAbledTypes String? // JSON array (multi-select)
   
   // Step 4: Residence & Address
   nativeState           String?
   nativeStateCode        String?
+  nativeCountry         String?
   nativeDistrict        String?
   nativeDistrictCode    String?
   nativeTaluk           String?
@@ -94,7 +97,9 @@ model ApplicationStepData {
   nativePanchayat       String?
   nativePanchayatCode   String?
   permanentAddress      String?
+  permanentPinCode      String?
   communicationAddress  String?
+  communicationPinCode  String?
   phone                 String?
   email                 String?
   
@@ -128,9 +133,14 @@ model ApplicationStepData {
   
   // Step 9: Co-curricular
   scienceFairGrade      String?
+  scienceFairCounts     String? // JSON object: {A,B,C,D,E} counts
   mathsFairGrade        String?
+  mathsFairCounts       String? // JSON object: {A,B,C,D,E} counts
   itFairGrade           String?
+  itFairCounts          String? // JSON object: {A,B,C,D,E} counts
   workExperienceGrade   String?
+  workExperienceCounts  String? // JSON object: {A,B,C,D,E} counts
+  socialScienceFairCounts String? // JSON object: {A,B,C,D,E} counts
   clubs                 String? // JSON array
   
   // Step 10: SSLC Attempts & Marks
@@ -312,4 +322,57 @@ enum SeedDataType {
   DISTRICT
   TALUK
   PANCHAYAT
+}
+
+// PAN Card Application (Form 49A) service
+model PanApplication {
+  id            String              @id @default(cuid())
+  userId        String              @unique
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        PanApplicationStatus @default(DRAFT)
+  stepData      Json?
+  documents     PanDocument[]
+  generatedPdf  GeneratedPanPdf?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  submittedAt   DateTime?
+
+  @@index([userId])
+}
+
+enum PanApplicationStatus {
+  DRAFT
+  SUBMITTED
+}
+
+model PanDocument {
+  id               String           @id @default(cuid())
+  panApplicationId String
+  panApplication   PanApplication   @relation(fields: [panApplicationId], references: [id], onDelete: Cascade)
+  purpose          PanDocumentPurpose
+  filePath         String
+  fileName         String
+  fileSize         Int
+  mimeType         String
+  uploadedAt       DateTime         @default(now())
+
+  @@index([panApplicationId])
+}
+
+enum PanDocumentPurpose {
+  PAN_POI
+  PAN_POA
+  PAN_DOB
+  PAN_PHOTO
+  PAN_SIGNATURE
+}
+
+model GeneratedPanPdf {
+  id               String        @id @default(cuid())
+  panApplicationId String        @unique
+  panApplication   PanApplication @relation(fields: [panApplicationId], references: [id], onDelete: Cascade)
+  filePath         String
+  fileName         String
+  fileSize         Int
+  generatedAt      DateTime      @default(now())
 }
