@@ -92,7 +92,7 @@ const POB_LABELS: Record<string, string> = {
 /** Build Form 49A-style PDF from PAN application, save to storage, upsert GeneratedPanPdf. */
 async function buildAndSavePanPdf(
   panApplication: NonNullable<PanApplicationWithRelations>
-): Promise<{ id: string; filePath: string; fileName: string; fileSize: number }> {
+) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595, 842]); // A4
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);

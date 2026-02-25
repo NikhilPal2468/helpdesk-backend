@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import panDocumentsRouter from './pan-documents';
 import panPdfRouter from './pan-pdf';
@@ -142,8 +142,8 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     ) {
       return res.status(400).json({ error: 'Invalid Proof of Date of Birth document type' });
     }
-    const existingStepData: Record<string, unknown> = panApplication?.stepData
-      ? { ...(panApplication.stepData as Record<string, unknown>) }
+    const existingStepData: Prisma.JsonObject = panApplication?.stepData
+      ? { ...(panApplication.stepData as Prisma.JsonObject) }
       : {};
 
     // Merge this step's payload into existing stepData (flat keys)
