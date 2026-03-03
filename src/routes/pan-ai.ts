@@ -67,10 +67,10 @@ router.post('/chat', authenticate, async (req: AuthRequest, res) => {
     ];
 
     const model = process.env.OPENAI_MODEL || 'gpt-5-mini';
+
     const r = await openai.responses.create({
       model,
       input,
-      temperature: 0.7,
       max_output_tokens: 500,
     });
 

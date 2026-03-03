@@ -93,23 +93,33 @@ router.post('/chat', authenticate, async (req: AuthRequest, res) => {
     let aiResponse = '';
     try {
       if (useWebSearch) {
-        const r = await openai.responses.create({
+        const webRequestOptions: any = {
           model: webModel,
           tools: [{ type: 'web_search_preview' }],
           input,
-          temperature: 0.3,
           max_output_tokens: 500,
-        });
+        };
+
+        if (!webModel.startsWith('o1') && !webModel.startsWith('o3')) {
+          webRequestOptions.temperature = 0.3;
+        }
+
+        const r = await openai.responses.create(webRequestOptions);
         aiResponse =
           (r as any).output_text ||
           'I apologize, but I could not generate a response.';
       } else {
-        const r = await openai.responses.create({
+        const defaultRequestOptions: any = {
           model: defaultModel,
           input,
-          temperature: 0.7,
           max_output_tokens: 500,
-        });
+        };
+
+        if (!defaultModel.startsWith('o1') && !defaultModel.startsWith('o3')) {
+          defaultRequestOptions.temperature = 0.7;
+        }
+
+        const r = await openai.responses.create(defaultRequestOptions);
         aiResponse =
           (r as any).output_text ||
           'I apologize, but I could not generate a response.';
@@ -118,12 +128,18 @@ router.post('/chat', authenticate, async (req: AuthRequest, res) => {
       // Fallback if web_search is not enabled/allowed for this account/model.
       const errMsg = e?.message || String(e);
       console.error('AI error (responses/web_search):', errMsg);
-      const r = await openai.responses.create({
+
+      const fallbackRequestOptions: any = {
         model: defaultModel,
         input,
-        temperature: 0.7,
         max_output_tokens: 500,
-      });
+      };
+
+      if (!defaultModel.startsWith('o1') && !defaultModel.startsWith('o3')) {
+        fallbackRequestOptions.temperature = 0.7;
+      }
+
+      const r = await openai.responses.create(fallbackRequestOptions);
       aiResponse =
         (r as any).output_text ||
         'I apologize, but I could not generate a response.';
